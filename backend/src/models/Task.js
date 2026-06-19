@@ -12,6 +12,10 @@ const TaskSchema = new mongoose.Schema({
     required: [true, 'Please add a description'],
     trim: true,
   },
+  complete: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now
