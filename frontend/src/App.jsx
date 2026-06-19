@@ -25,6 +25,8 @@ import {
 import { AddTaskCard } from '@/components/AddTaskCard'
 import { EditTaskCard } from '@/components/EditTaskCard'
 import { fetchTasks, updateTask, deleteTask } from '@/lib/api'
+import { Input } from '@/components/ui/input'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   ClipboardListIcon,
   CheckCircle2Icon,
@@ -32,14 +34,25 @@ import {
   EditIcon,
   ClockIcon,
   Loader2Icon,
+  SearchIcon,
 } from 'lucide-react'
 
 function App() {
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all') // 'all' | 'pending' | 'completed'
+  const [filter, setFilter] = useState('all') // 'all' | 'active' | 'inactive'
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [editingTask, setEditingTask] = useState(null)
   const [deletingTask, setDeletingTask] = useState(null)
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300)
+    return () => clearTimeout(handler)
+  }, [searchQuery])
 
   // Fetch tasks on initial render
   useEffect(() => {
@@ -96,15 +109,22 @@ function App() {
 
   // Filter tasks
   const filteredTasks = tasks.filter(task => {
-    if (filter === 'completed') return task.complete
-    if (filter === 'pending') return !task.complete
+    // 1. Status Filter
+    if (filter === 'active' && task.complete) return false
+    if (filter === 'inactive' && !task.complete) return false
+
+    // 2. Search Filter (by task name / title)
+    if (debouncedSearchQuery) {
+      return task.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+    }
+
     return true
   })
 
   // Statistics
   const totalTasks = tasks.length
-  const completedTasksCount = tasks.filter(t => t.complete).length
-  const pendingTasksCount = totalTasks - completedTasksCount
+  const activeTasksCount = tasks.filter(t => !t.complete).length
+  const inactiveTasksCount = totalTasks - activeTasksCount
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
@@ -116,11 +136,11 @@ function App() {
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <CheckCircle2Icon className="size-3.5 text-emerald-500" />
-            <span>{completedTasksCount} Done</span>
+            <span>{inactiveTasksCount} Done</span>
           </div>
           <div className="flex items-center gap-1.5">
             <ClockIcon className="size-3.5 text-amber-500" />
-            <span>{pendingTasksCount} Pending</span>
+            <span>{activeTasksCount} Pending</span>
           </div>
         </div>
       </header>
@@ -133,33 +153,42 @@ function App() {
 
         {/* Right Side: Tasks List */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Filters card / control bar */}
-          <div className="flex items-center justify-between flex-wrap gap-4 border border-border bg-card p-4">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-medium text-muted-foreground">Show:</span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant={filter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilter('all')}
-                >
+          {/* Filters and Search control bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-border bg-card p-4">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-sm">
+              <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+
+            {/* ToggleGroup Status Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">Status:</span>
+              <ToggleGroup
+                type="single"
+                value={filter}
+                onValueChange={(value) => {
+                  if (value) setFilter(value)
+                }}
+                variant="outline"
+                size="sm"
+              >
+                <ToggleGroupItem value="all" className="text-xs">
                   All ({totalTasks})
-                </Button>
-                <Button
-                  variant={filter === 'pending' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilter('pending')}
-                >
-                  Pending ({pendingTasksCount})
-                </Button>
-                <Button
-                  variant={filter === 'completed' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilter('completed')}
-                >
-                  Completed ({completedTasksCount})
-                </Button>
-              </div>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="active" className="text-xs">
+                  Active ({activeTasksCount})
+                </ToggleGroupItem>
+                <ToggleGroupItem value="inactive" className="text-xs">
+                  Inactive ({inactiveTasksCount})
+                </ToggleGroupItem>
+              </ToggleGroup>
             </div>
           </div>
 
@@ -175,11 +204,13 @@ function App() {
                 <ClipboardListIcon className="size-10 text-muted-foreground/40 mb-3" />
                 <CardTitle className="text-sm font-medium mb-1">No Tasks Found</CardTitle>
                 <CardDescription className="max-w-xs">
-                  {filter === 'all'
+                  {searchQuery
+                    ? `No tasks matching "${searchQuery}" were found.`
+                    : filter === 'all'
                     ? 'Your workspace is clear. Create a task to get started.'
-                    : filter === 'pending'
-                    ? "You don't have any pending tasks right now."
-                    : "No completed tasks yet. Go finish some work!"}
+                    : filter === 'active'
+                    ? "You don't have any active tasks right now."
+                    : "No inactive tasks yet. Go finish some work!"}
                 </CardDescription>
               </Card>
             ) : (

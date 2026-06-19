@@ -1,9 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const connectDB = require('./config/db');
-const errorHandler = require('./middlewares/errorHandler');
-const taskRoutes = require('./routes/taskRoutes');
+const connectDB = require('./src/config/db');
+const errorHandler = require('./src/middlewares/errorHandler');
+const taskRoutes = require('./src/routes/taskRoutes');
 
 // Connect to database
 connectDB();

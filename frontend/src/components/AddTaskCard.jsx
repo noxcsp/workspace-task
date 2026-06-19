@@ -28,6 +28,30 @@ export function AddTaskCard({ onTaskAdded }) {
     return Object.keys(newErrors).length === 0
   }
 
+  const handleTitleChange = (e) => {
+    const val = e.target.value
+    setTitle(val)
+    if (val.trim() && errors.title) {
+      setErrors((prev) => {
+        const next = { ...prev }
+        delete next.title
+        return next
+      })
+    }
+  }
+
+  const handleDescriptionChange = (e) => {
+    const val = e.target.value
+    setDescription(val)
+    if (val.trim() && errors.description) {
+      setErrors((prev) => {
+        const next = { ...prev }
+        delete next.description
+        return next
+      })
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) return
@@ -63,28 +87,32 @@ export function AddTaskCard({ onTaskAdded }) {
           <CardTitle>Create New Task</CardTitle>
           <CardDescription>Add a new task to your workspace dashboard</CardDescription>
         </CardHeader>
-        <CardContent>
-          <FieldGroup className="flex flex-col gap-4">
-            <Field data-invalid={!!errors.title}>
-              <FieldLabel htmlFor="add-task-title">Task Title</FieldLabel>
+        <CardContent className="my-4">
+          <FieldGroup className="flex flex-col gap-6">
+            <Field className="gap-1.5" data-invalid={!!errors.title}>
+              <FieldLabel htmlFor="add-task-title">
+                Task Title <span className="text-destructive font-medium">*</span>
+              </FieldLabel>
               <Input
                 id="add-task-title"
                 placeholder="Write a clear title..."
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={handleTitleChange}
                 disabled={loading}
                 aria-invalid={!!errors.title}
               />
               <FieldError>{errors.title}</FieldError>
             </Field>
 
-            <Field data-invalid={!!errors.description}>
-              <FieldLabel htmlFor="add-task-desc">Task Description</FieldLabel>
+            <Field className="gap-1.5" data-invalid={!!errors.description}>
+              <FieldLabel htmlFor="add-task-desc">
+                Task Description <span className="text-destructive font-medium">*</span>
+              </FieldLabel>
               <Textarea
                 id="add-task-desc"
                 placeholder="Detail what needs to be done..."
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={handleDescriptionChange}
                 disabled={loading}
                 aria-invalid={!!errors.description}
               />
@@ -92,7 +120,7 @@ export function AddTaskCard({ onTaskAdded }) {
             </Field>
           </FieldGroup>
         </CardContent>
-        <CardFooter className="flex justify-end gap-2">
+        <CardFooter className="flex justify-end gap-3">
           <Button
             type="button"
             variant="outline"

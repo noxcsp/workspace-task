@@ -59,7 +59,7 @@ export function EditTaskCard({ task, onTaskUpdated, onCancel }) {
           <CardTitle>Edit Task</CardTitle>
           <CardDescription>Update the details and status of this task</CardDescription>
         </CardHeader>
-        <CardContent className="px-0">
+        <CardContent className="px-0 my-4">
           <FieldGroup className="flex flex-col gap-4">
             <Field data-invalid={!!errors.title}>
               <FieldLabel htmlFor="edit-task-title">Task Title</FieldLabel>
